@@ -536,7 +536,7 @@ export default function Home() {
                     ) : (
                       <div className="text-xs font-semibold leading-6 text-red-400">
                         {selectedNamespace
-                          ? 'No chats in this namespace'
+                          ? 'No chats in this storage'
                           : 'Select a namespace to display chats'}
                       </div>
                     )}
@@ -587,7 +587,7 @@ export default function Home() {
 
               <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 items-center">
                 <span className="w-full text-center items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs sm:text-sm md:text-md md:text-lg font-medium text-blue-400 ring-1 ring-inset ring-pink-blue/30">
-                  DOC CHATBOT
+                  AI Tutor PDF Reader
                 </span>
 
                 <div className="flex items-center gap-x-4 lg:gap-x-6">
@@ -638,7 +638,7 @@ export default function Home() {
                     </h1>
                     <p className="text-md md:text-xl text-center text-gray-100 mt-4">
                       {!nameSpaceHasChats && selectedNamespace
-                        ? 'You have no chats in this namespace. Create a new chat to get started.'
+                        ? 'You have no chats in this storage space. Create a new chat to get started.'
                         : !selectedNamespace
                         ? 'Select a namespace to display chats'
                         : 'You have no chats. Create a new chat to get started.'}
