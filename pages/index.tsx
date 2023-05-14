@@ -634,7 +634,7 @@ export default function Home() {
                 <>
                   <div className="flex flex-col items-center justify-center align-center h-screen px-4">
                     <h1 className="text-xl md:text-3xl text-center font-semibold text-gray-100">
-                      Welcome to doc-chatbot
+                      Welcome to the AI PDF Reader!
                     </h1>
                     <p className="text-md md:text-xl text-center text-gray-100 mt-4">
                       {!nameSpaceHasChats && selectedNamespace
