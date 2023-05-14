@@ -30,7 +30,7 @@ export default function Example() {
                 {session ? (
                   <p>Signed in as {session?.user?.name}</p>
                 ) : (
-                  <p>doc-chatbot</p>
+                  <p>AI Tutor PDF Reader</p>
                 )}
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight text-white">
