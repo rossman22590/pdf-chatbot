@@ -1,108 +1,653 @@
+import { Fragment, useState, useRef, useEffect, useCallback } from 'react';
 import React from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { ArrowRightIcon } from '@heroicons/react/20/solid';
+import { ChatMessage } from '@/types/chat';
+import { Document } from 'langchain/document';
+import useNamespaces from '@/hooks/useNamespaces';
+import { useChats } from '@/hooks/useChats';
+import MessageList from '@/components/main/MessageList';
+import ChatForm from '@/components/main/ChatForm';
 import { useRouter } from 'next/router';
-import Image from 'next/image';
+import { useSession, signOut } from 'next-auth/react';
+import LoadingState from '@/components/other/LoadingState';
+import { Dialog, Transition } from '@headlessui/react';
+import { Switch } from '@headlessui/react';
 
-export default function Example() {
+import {
+  Bars3Icon,
+  Cog6ToothIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+
+import { PlusCircleIcon } from '@heroicons/react/20/solid';
+import ListOfNamespaces from '@/components/sidebar/ListOfNamespaces';
+import ListOfChats from '@/components/sidebar/ListOfChats';
+import ProfileDropdown from '@/components/other/ProfileDropdown';
+import { Message } from '@/types';
+
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+export default function Home() {
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [enabled, setEnabled] = useState<boolean>(false);
+
   const router = useRouter();
-  const { data: session } = useSession();
+  const [query, setQuery] = useState<string>('');
+  const [chatId, setChatId] = useState<string>('1');
+
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated: () => router.push('/login'),
+  });
+  const [returnSourceDocuments, setReturnSourceDocuments] =
+    useState<boolean>(false);
+  const [modelTemperature, setModelTemperature] = useState<number>(0.5);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [userName, setUserName] = useState<string>('');
+  const [userImage, setUserImage] = useState<string>('');
+
+  const { namespaces, selectedNamespace, setSelectedNamespace } =
+    useNamespaces(userEmail);
+
+  const {
+    chatList,
+    selectedChatId,
+    setSelectedChatId,
+    createChat,
+    deleteChat,
+    chatNames,
+    updateChatName,
+  } = useChats(selectedNamespace, userEmail);
+
+  const nameSpaceHasChats = chatList.length > 0;
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [messageState, setMessageState] = useState<{
+    messages: ChatMessage[];
+    pending?: string;
+    history: [string, string][];
+    pendingSourceDocs?: Document[];
+  }>({
+    messages: [
+      {
+        message: 'Hi, what would you like to know about these documents?',
+        type: 'apiMessage',
+      },
+    ],
+    history: [],
+  });
+
+  function mapChatMessageToMessage(chatMessage: ChatMessage): Message {
+    return {
+      ...chatMessage,
+      sourceDocs: chatMessage.sourceDocs?.map((doc) => ({
+        pageContent: doc.pageContent,
+        metadata: { source: doc.metadata.source },
+      })),
+    };
+  }
+
+  const { messages, history } = messageState;
+
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleTemperatureChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setModelTemperature(parseFloat(event.target.value));
+  };
+
+  const fetchChatHistory = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/history?chatId=${selectedChatId}&userEmail=${userEmail}`,
+      );
+      const data = await response.json();
+
+      const pairedMessages: [any, any][] = [];
+
+      for (let i = 0; i < data.length; i += 2) {
+        pairedMessages.push([data[i], data[i + 1]]);
+      }
+
+      setMessageState((state) => ({
+        ...state,
+        messages: data.map((message: any) => ({
+          type: message.sender === 'user' ? 'userMessage' : 'apiMessage',
+          message: message.content,
+          sourceDocs: message.sourceDocs?.map((doc: any) => ({
+            pageContent: doc.pageContent,
+            metadata: { source: doc.metadata.source },
+          })),
+        })),
+        history: pairedMessages.map(([userMessage, botMessage]: any) => [
+          userMessage.content,
+          botMessage?.content || '',
+        ]),
+      }));
+    } catch (error) {
+      console.error('Failed to fetch chat history:', error);
+    }
+  }, [selectedChatId, userEmail]);
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.email) {
+      setUserEmail(session.user.email);
+      if (session?.user?.name) {
+        setUserName(session.user.name);
+      }
+      if (session?.user?.image) {
+        setUserImage(session.user.image);
+      }
+    }
+  }, [status, session]);
+
+  useEffect(() => {
+    if (selectedNamespace && chatList.length > 0) {
+      setSelectedChatId(chatList[0]);
+    }
+  }, [selectedNamespace, chatList, setSelectedChatId]);
+
+  useEffect(() => {
+    if (selectedChatId) {
+      fetchChatHistory();
+    }
+  }, [selectedChatId, fetchChatHistory]);
+
+  useEffect(() => {
+    textAreaRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    fetchChatHistory();
+  }, [chatId, fetchChatHistory]);
+
+  async function handleSubmit(e: any) {
+    e.preventDefault();
+    setError(null);
+
+    if (!query) {
+      alert('Please input a question');
+      return;
+    }
+
+    const question = query.trim();
+    setMessageState((state) => ({
+      ...state,
+      messages: [
+        ...state.messages,
+        {
+          type: 'userMessage',
+          message: question,
+        },
+      ],
+    }));
+
+    setLoading(true);
+    setQuery('');
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question,
+          history,
+          chatId,
+          selectedNamespace,
+          userEmail,
+          returnSourceDocuments,
+          modelTemperature,
+        }),
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setMessageState((state) => ({
+          ...state,
+          messages: [
+            ...state.messages,
+            {
+              type: 'apiMessage',
+              message: data.text,
+              sourceDocs: data.sourceDocuments,
+            },
+          ],
+          history: [...state.history, [question, data.text]],
+        }));
+      }
+
+      setLoading(false);
+
+      messageListRef.current?.scrollTo(0, messageListRef.current.scrollHeight);
+    } catch (error) {
+      setLoading(false);
+      console.error('Error fetching data:', error);
+      if (error) {
+        console.error('Server responded with:', error);
+      }
+      setError('An error occurred while fetching the data. Please try again.');
+    }
+  }
+
+  const handleEnter = (e: any) => {
+    if (e.key === 'Enter' && query) {
+      handleSubmit(e);
+    } else if (e.key == 'Enter') {
+      e.preventDefault();
+    }
+  };
 
   return (
-    <div className="bg-gray-900 ">
-      <div className="relative isolate pt-14">
-        <div
-          className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
-          aria-hidden="true"
-        >
-          <div
-            className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
-            style={{
-              clipPath:
-                'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-            }}
-          />
-        </div>
-        <div className="py-24 sm:py-16">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <span className="inline-flex rounded-full bg-indigo-500/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-500/20 mb-2">
-                {session ? (
-                  <p>Signed in as {session?.user?.name}</p>
-                ) : (
-                  <p>AI Tutor PDF Reader</p>
-                )}
-              </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight text-white">
-                {' '}
-                {/* Responsive font-size */}
-                Have a conversation with your documents
-              </h1>
-              <p className="mt-6 text-lg leading-8 text-gray-300">
-                Upload your files, ask questions, and get relevant answers.
-                Maintain multiple chats, windows, and conversations in one
-                place.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-6 sm:gap-y-0">
-                {session ? (
-                  <div className="flex flex-col sm:flex-row sm:justify-center gap-4 sm:gap-8 w-2/3">
-                    <button
-                      type="button"
-                      className="rounded-md bg-white/10 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-white/20"
-                      onClick={() => signOut()}
+    <>
+      {status === 'loading' ? (
+        <LoadingState />
+      ) : (
+        <div>
+          <Transition.Root show={sidebarOpen} as={Fragment}>
+            <Dialog
+              as="div"
+              className="relative z-50 lg:hidden"
+              onClose={setSidebarOpen}
+            >
+              <Transition.Child
+                as={Fragment}
+                enter="transition-opacity ease-linear duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition-opacity ease-linear duration-300"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-gray-900/80" />
+              </Transition.Child>
+
+              <div className="fixed inset-0 flex">
+                <Transition.Child
+                  as={Fragment}
+                  enter="transition ease-in-out duration-300 transform"
+                  enterFrom="-translate-x-full"
+                  enterTo="translate-x-0"
+                  leave="transition ease-in-out duration-300 transform"
+                  leaveFrom="translate-x-0"
+                  leaveTo="-translate-x-full"
+                >
+                  <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
+                    <Transition.Child
+                      as={Fragment}
+                      enter="ease-in-out duration-300"
+                      enterFrom="opacity-0"
+                      enterTo="opacity-100"
+                      leave="ease-in-out duration-300"
+                      leaveFrom="opacity-100"
+                      leaveTo="opacity-0"
                     >
-                      Sign out
-                    </button>
+                      <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
+                        <button
+                          type="button"
+                          className="-m-2.5 p-2.5"
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          <span className="sr-only">Close sidebar</span>
+                          <XMarkIcon
+                            className="h-6 w-6 text-white"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </div>
+                    </Transition.Child>
+                    {/* Sidebar component */}
+                    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4 ring-1 ring-white/10">
+                      <div className="flex h-16 shrink-0 items-center"></div>
+                      <nav className="flex flex-1 flex-col">
+                        <ul
+                          role="list"
+                          className="flex flex-1 flex-col gap-y-7"
+                        >
+                          <li>
+                            <ul role="list" className="-mx-2 space-y-1">
+                              {/* mobile */}
+                              {selectedNamespace && (
+                                <div className="space-y-4 mb-4 px-2">
+                                  <Switch.Group
+                                    as="div"
+                                    // className="flex items-center justify-between"
+                                    className="flex flex-row items-center justify-between align-center"
+                                  >
+                                    <span className="flex flex-col">
+                                      <Switch.Label
+                                        as="span"
+                                        className="text-xs sm:text-sm font-medium leading-6 text-purple-400"
+                                        passive
+                                      >
+                                        Include source documents
+                                      </Switch.Label>
+                                    </span>
+                                    <Switch
+                                      checked={enabled}
+                                      onChange={(checked) => {
+                                        setEnabled(checked);
+                                        setReturnSourceDocuments(checked);
+                                      }}
+                                      className={classNames(
+                                        enabled ? 'bg-pink-500' : 'bg-gray-200',
+                                        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2',
+                                      )}
+                                    >
+                                      <span
+                                        aria-hidden="true"
+                                        className={classNames(
+                                          enabled
+                                            ? 'translate-x-5'
+                                            : 'translate-x-0',
+                                          'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                                        )}
+                                      />
+                                    </Switch>
+                                  </Switch.Group>
+                                  <div>
+                                    <label className="block font-medium leading-6 text-xs sm:text-sm text-purple-400">
+                                      Model Temperature
+                                    </label>
+                                    <div className="mt-2">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="1"
+                                        value={modelTemperature}
+                                        onChange={handleTemperatureChange}
+                                        step="0.1"
+                                        name="temperature"
+                                        id="temperature"
+                                        className="block w-full rounded-md bg-gray-800 text-gray-300 border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-pink-600 sm:text-sm sm:leading-6"
+                                        placeholder="0.0 - 1.0"
+                                      />
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center gap-x-2 rounded-md bg-pink-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-pink-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500 w-full mb-8"
+                                    onClick={async () => {
+                                      const newChatId = await createChat();
+                                      setChatId(newChatId);
+                                      setSelectedChatId(newChatId);
+                                    }}
+                                  >
+                                    <PlusCircleIcon
+                                      className="-ml-0.5 h-5 w-5"
+                                      aria-hidden="true"
+                                    />
+                                    New chat
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* new chat button */}
+                            </ul>
+                          </li>
+                          {selectedNamespace ? (
+                            <ListOfChats
+                              chatList={chatList}
+                              selectedChatId={selectedChatId}
+                              setChatId={setChatId}
+                              setSelectedChatId={setSelectedChatId}
+                              chatNames={chatNames}
+                              updateChatName={updateChatName}
+                              deleteChat={deleteChat}
+                            />
+                          ) : (
+                            <div className="text-xs font-semibold leading-6 text-red-400">
+                              Select a namespace to display chats
+                            </div>
+                          )}
+                          {/* mobile */}
+                          <ListOfNamespaces
+                            namespaces={namespaces}
+                            selectedNamespace={selectedNamespace}
+                            setSelectedNamespace={setSelectedNamespace}
+                          />
+
+                          {/* mobile */}
+                          <li className="mt-auto">
+                            <button
+                              className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white"
+                              onClick={() => router.push('/settings')}
+                            >
+                              <Cog6ToothIcon
+                                className="h-6 w-6 shrink-0"
+                                aria-hidden="true"
+                              />
+                              Settings
+                            </button>
+                          </li>
+                        </ul>
+                      </nav>
+                    </div>
+                  </Dialog.Panel>
+                </Transition.Child>
+              </div>
+            </Dialog>
+          </Transition.Root>
+
+          {/* Static sidebar for desktop */}
+          <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+            {/* Sidebar component, swap this element with another sidebar if you like */}
+            <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4 border-r border-gray-800">
+              <div className="flex h-16 shrink-0 items-center"></div>
+              <nav className="flex flex-1 flex-col">
+                <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                  <li>
+                    {selectedNamespace && (
+                      <div className="space-y-4 mb-6">
+                        <Switch.Group
+                          as="div"
+                          className="flex items-center justify-between"
+                        >
+                          <span className="flex flex-grow flex-col">
+                            <Switch.Label
+                              as="span"
+                              className="text-sm font-medium leading-6 text-gray-100"
+                              passive
+                            >
+                              Include source documents
+                            </Switch.Label>
+                          </span>
+                          <Switch
+                            checked={enabled}
+                            onChange={(checked) => {
+                              setEnabled(checked);
+                              setReturnSourceDocuments(checked);
+                            }}
+                            className={classNames(
+                              enabled ? 'bg-pink-500' : 'bg-gray-200',
+                              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2',
+                            )}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={classNames(
+                                enabled ? 'translate-x-5' : 'translate-x-0',
+                                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                              )}
+                            />
+                          </Switch>
+                        </Switch.Group>
+                        <div>
+                          <label className="block text-xs sm:text-sm text-purple-400 font-medium leading-6">
+                            Model Temperature
+                          </label>
+                          <div className="mt-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max="1"
+                              value={modelTemperature}
+                              onChange={handleTemperatureChange}
+                              step="0.1"
+                              name="temperature"
+                              id="temperature"
+                              className="block w-full rounded-md bg-gray-800 text-gray-300 border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-pink-600 sm:text-sm sm:leading-6"
+                              placeholder="0.0 - 1.0"
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-x-2 rounded-md bg-pink-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-pink-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500 w-full mb-8"
+                          onClick={async () => {
+                            const newChatId = await createChat();
+                            setChatId(newChatId);
+                            setSelectedChatId(newChatId);
+                          }}
+                        >
+                          <PlusCircleIcon
+                            className="-ml-0.5 h-5 w-5"
+                            aria-hidden="true"
+                          />
+                          New chat
+                        </button>
+                      </div>
+                    )}
+
+                    {/* <div className="text-xs sm:text-sm font-semibold leading-6 text-purple-400">
+                      Your chatsrrr
+                    </div> */}
+                    {/* desktop */}
+                    {selectedNamespace && nameSpaceHasChats ? (
+                      <ListOfChats
+                        chatList={chatList}
+                        selectedChatId={selectedChatId}
+                        setChatId={setChatId}
+                        setSelectedChatId={setSelectedChatId}
+                        chatNames={chatNames}
+                        updateChatName={updateChatName}
+                        deleteChat={deleteChat}
+                      />
+                    ) : (
+                      <div className="text-xs font-semibold leading-6 text-red-400">
+                        {selectedNamespace
+                          ? 'No chats in this namespace'
+                          : 'Select a namespace to display chats'}
+                      </div>
+                    )}
+
+                    {/* desktop */}
+                  </li>
+                  {/* desktop */}
+                  <ListOfNamespaces
+                    namespaces={namespaces}
+                    selectedNamespace={selectedNamespace}
+                    setSelectedNamespace={setSelectedNamespace}
+                  />
+
+                  {/* desktop */}
+                  <li className="mt-auto">
                     <button
-                      type="button"
-                      className="rounded-md bg-indigo-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                      className="group w-full -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white"
                       onClick={() => router.push('/settings')}
                     >
+                      <Cog6ToothIcon
+                        className="h-6 w-6 shrink-0"
+                        aria-hidden="true"
+                      />
                       Settings
                     </button>
-                    <button
-                      type="button"
-                      className="inline-flex justify-center rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-300"
-                      onClick={() => router.push('/')}
-                    >
-                      Chat
-                      <ArrowRightIcon className="w-5 h-5 ml-2 text-gray-900" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="rounded-md bg-indigo-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                    onClick={() =>
-                      signIn('google', { callbackUrl: '/settings' })
-                    }
-                  >
-                    Sign in with Google
-                  </button>
-                )}
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+
+          <div className="lg:pl-72">
+            <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-800 bg-gray-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+              <button
+                type="button"
+                className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <span className="sr-only">Open sidebar</span>
+                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              </button>
+
+              {/* Separator */}
+              <div
+                className="h-6 w-px bg-gray-900/10 lg:hidden"
+                aria-hidden="true"
+              />
+
+              <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 items-center">
+                <span className="w-full text-center items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs sm:text-sm md:text-md md:text-lg font-medium text-purple-400 ring-1 ring-inset ring-pink-purple/30">
+                  AI Tutor PDF Reader
+                </span>
+
+                <div className="flex items-center gap-x-4 lg:gap-x-6">
+                  {/* Separator */}
+                  <div
+                    className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10"
+                    aria-hidden="true"
+                  />
+                  <ProfileDropdown
+                    userImage={userImage ? userImage : '/images/user.png'}
+                    userName={userName ? userName : 'User'}
+                    signOut={signOut}
+                  />
+                </div>
               </div>
             </div>
-            <Image
-              src="/images/main_desktop.png"
-              alt="App screenshot"
-              width={2432}
-              height={1442}
-              className="mt-16 rounded-md bg-white/5 shadow-2xl ring-1 ring-white/10 sm:mt-24"
-            />
+
+            <main className="flex flex-col h-full justify-between">
+              {nameSpaceHasChats && selectedNamespace ? (
+                <>
+                  <div className="overflow-y-auto">
+                    <MessageList
+                      messages={messages.map(mapChatMessageToMessage)}
+                      loading={loading}
+                      messageListRef={messageListRef}
+                      userImage={userImage}
+                      userName={userName}
+                    />
+                  </div>
+
+                  <div className="sticky bottom-0">
+                    <ChatForm
+                      loading={loading}
+                      error={error}
+                      query={query}
+                      textAreaRef={textAreaRef}
+                      handleEnter={handleEnter}
+                      handleSubmit={handleSubmit}
+                      setQuery={setQuery}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-col items-center justify-center align-center h-screen px-4">
+                    <h1 className="text-xl md:text-3xl text-center font-semibold text-gray-100">
+                      Welcome to the AI PDF Reader!
+                    </h1>
+                    <p className="text-md md:text-xl text-center text-gray-100 mt-4">
+                      {!nameSpaceHasChats && selectedNamespace
+                        ? 'You have no chats in this namespace. Create a new chat to get started.'
+                        : !selectedNamespace
+                        ? 'Select a namespace to display chats'
+                        : 'You have no chats. Create a new chat to get started.'}
+                    </p>
+                  </div>
+                </>
+              )}
+            </main>
           </div>
         </div>
-        <div
-          className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]"
-          aria-hidden="true"
-        >
-          <div
-            className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"
-            style={{
-              clipPath:
-                'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-            }}
-          />
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
