@@ -66,7 +66,7 @@ function MessageList({
                         className={`mt-2 inline-flex items-center rounded-md px-2 py-1 text-xs sm:text-sm font-medium ring-1 ring-inset ${
                           message.type === 'apiMessage'
                             ? 'bg-indigo-400/10 text-indigo-400 ring-indigo-400/30'
-                            : 'bg-purple-400/10 text-purple-400 ring-purple-400/30'
+                            : 'bg-pink-400/10 text-pink-400 ring-pink-400/30'
                         }`}
                       >
                         {message.type === 'apiMessage'
