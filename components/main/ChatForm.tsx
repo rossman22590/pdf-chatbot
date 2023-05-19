@@ -75,7 +75,7 @@ const ChatForm = ({
       <button
         type="submit"
         disabled={loading}
-        className="inline-flex justify-center p-2 rounded-full cursor-pointer text-blue-500 hover:text-blue-300"
+        className="inline-flex justify-center p-2 rounded-full cursor-pointer text-purple-500 hover:text-purple-300"
       >
         {loading ? (
           // <LoadingDots color="#ffffff" />
