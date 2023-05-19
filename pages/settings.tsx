@@ -185,7 +185,7 @@ export default function Settings() {
               {namespaces.length > 0 ? (
                 <>
                   <div className="flex flex-col sm:flex-row items-center justify-between mb-8">
-                    <span className="rounded-md bg-blue-400/10 px-3 py-2.5 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-400/30 mb-4 sm:mb-0">
+                    <span className="rounded-md bg-purple-400/10 px-3 py-2.5 text-xs font-medium text-purple-400 ring-1 ring-inset ring-purple-400/30 mb-4 sm:mb-0">
                       Signed in as {userEmail}
                     </span>
                     <button
@@ -216,7 +216,7 @@ export default function Settings() {
                     </div>
                     <div className="flex-shrink-0">
                       <button
-                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         onClick={() => handleDelete(namespace)}
                       >
                         Delete
@@ -288,7 +288,10 @@ export default function Settings() {
             {/* upload area */}
             <div className="mt-4 sm:mt-8 flex justify-end">
               <button
-                className="rounded-md bg-indigo-500 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 text-center text-sm sm:text-base font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                className="rounded-md bg-pink-400 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 text-center text-sm sm:text-base font-semibold text-white shadow-sm hover:bg-pink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-400"
+                style={{
+                  backgroundColor: '#FF64B4',
+                }}
                 onClick={handleUpload}
               >
                 {uploadMessage ? uploadMessage : 'Upload files'}
@@ -306,7 +309,7 @@ export default function Settings() {
                   <div className="mt-2.5">
                     <input
                       type="text"
-                      className="block w-full rounded-md border-0 bg-white/5 px-2 sm:px-3.5 py-1.5 sm:py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-sm sm:text-base sm:leading-6 opacity-50"
+                      className="block w-full rounded-md border-0 bg-white/5 px-2 sm:px-3.5 py-1.5 sm:py-2 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-pink-400 text-sm sm:text-base sm:leading-6 opacity-50"
                       value={namespaceName}
                       onChange={(e) => setNamespaceName(e.target.value)}
                     />
@@ -317,7 +320,7 @@ export default function Settings() {
             {namespaceName && (
               <div className="mt-4 sm:mt-8 flex justify-end">
                 <button
-                  className="rounded-md bg-indigo-500 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 text-center text-sm sm:text-base font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                  className="rounded-md bg-pink-400 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 text-center text-sm sm:text-base font-semibold text-white shadow-sm hover:bg-pink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-400"
                   onClick={handleIngest}
                 >
                   {loading ? 'Ingesting...' : message ? message : 'Ingest'}
