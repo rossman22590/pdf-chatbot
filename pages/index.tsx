@@ -324,7 +324,7 @@ export default function Home() {
                                     <span className="flex flex-col">
                                       <Switch.Label
                                         as="span"
-                                        className="text-xs sm:text-sm font-medium leading-6 text-blue-400"
+                                        className="text-xs sm:text-sm font-medium leading-6 text-purple-400"
                                         passive
                                       >
                                         Include source documents
@@ -337,10 +337,8 @@ export default function Home() {
                                         setReturnSourceDocuments(checked);
                                       }}
                                       className={classNames(
-                                        enabled
-                                          ? 'bg-indigo-600'
-                                          : 'bg-gray-200',
-                                        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2',
+                                        enabled ? 'bg-pink-500' : 'bg-gray-200',
+                                        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2',
                                       )}
                                     >
                                       <span
@@ -355,7 +353,7 @@ export default function Home() {
                                     </Switch>
                                   </Switch.Group>
                                   <div>
-                                    <label className="block font-medium leading-6 text-xs sm:text-sm text-blue-400">
+                                    <label className="block font-medium leading-6 text-xs sm:text-sm text-purple-400">
                                       Model Temperature
                                     </label>
                                     <div className="mt-2">
@@ -368,14 +366,14 @@ export default function Home() {
                                         step="0.1"
                                         name="temperature"
                                         id="temperature"
-                                        className="block w-full rounded-md bg-gray-800 text-gray-300 border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                        className="block w-full rounded-md bg-gray-800 text-gray-300 border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-pink-600 sm:text-sm sm:leading-6"
                                         placeholder="0.0 - 1.0"
                                       />
                                     </div>
                                   </div>
                                   <button
                                     type="button"
-                                    className="inline-flex items-center gap-x-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 w-full mb-8"
+                                    className="inline-flex items-center gap-x-2 rounded-md bg-pink-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-pink-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500 w-full mb-8"
                                     onClick={async () => {
                                       const newChatId = await createChat();
                                       setChatId(newChatId);
@@ -468,8 +466,8 @@ export default function Home() {
                               setReturnSourceDocuments(checked);
                             }}
                             className={classNames(
-                              enabled ? 'bg-indigo-600' : 'bg-gray-200',
-                              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2',
+                              enabled ? 'bg-pink-500' : 'bg-gray-200',
+                              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2',
                             )}
                           >
                             <span
@@ -482,7 +480,7 @@ export default function Home() {
                           </Switch>
                         </Switch.Group>
                         <div>
-                          <label className="block text-xs sm:text-sm text-blue-400 font-medium leading-6">
+                          <label className="block text-xs sm:text-sm text-purple-400 font-medium leading-6">
                             Model Temperature
                           </label>
                           <div className="mt-2">
@@ -495,7 +493,7 @@ export default function Home() {
                               step="0.1"
                               name="temperature"
                               id="temperature"
-                              className="block w-full rounded-md bg-gray-800 text-gray-300 border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                              className="block w-full rounded-md bg-gray-800 text-gray-300 border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-600 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-pink-600 sm:text-sm sm:leading-6"
                               placeholder="0.0 - 1.0"
                             />
                           </div>
@@ -503,7 +501,7 @@ export default function Home() {
 
                         <button
                           type="button"
-                          className="inline-flex items-center gap-x-2 rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 w-full mb-8"
+                          className="inline-flex items-center gap-x-2 rounded-md bg-pink-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-pink-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500 w-full mb-8"
                           onClick={async () => {
                             const newChatId = await createChat();
                             setChatId(newChatId);
@@ -519,7 +517,7 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* <div className="text-xs sm:text-sm font-semibold leading-6 text-blue-400">
+                    {/* <div className="text-xs sm:text-sm font-semibold leading-6 text-purple-400">
                       Your chatsrrr
                     </div> */}
                     {/* desktop */}
@@ -586,7 +584,7 @@ export default function Home() {
               />
 
               <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 items-center">
-                <span className="w-full text-center items-center rounded-md bg-blue-400/10 px-2 py-1 text-xs sm:text-sm md:text-md md:text-lg font-medium text-blue-400 ring-1 ring-inset ring-pink-blue/30">
+                <span className="w-full text-center items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs sm:text-sm md:text-md md:text-lg font-medium text-purple-400 ring-1 ring-inset ring-pink-purple/30">
                   AI Tutor PDF Reader
                 </span>
 
