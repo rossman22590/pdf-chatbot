@@ -5,3 +5,9 @@
 .markdown > * {
   all: revert;
 }
+
+
+.bg-gray-900 {
+    --tw-bg-opacity: 1;
+    background-color: #0b0b0b;
+}
