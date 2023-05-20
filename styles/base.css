@@ -14,3 +14,6 @@
 .via-gray-900\/70 {
     --tw-gradient-stops: #0b0b0b,rgb(30 23 36) var(--tw-gradient-via-position),rgb(64 41 61);
 }
+.bg-gray-800 {
+    background-color: #1e1724;
+}
