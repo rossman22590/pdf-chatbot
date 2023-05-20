@@ -584,7 +584,7 @@ export default function Home() {
               />
 
               <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 items-center">
-                <span className="w-full text-center items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs sm:text-sm md:text-md md:text-lg font-medium text-purple-400 ring-1 ring-inset ring-pink-purple/30">
+                <span className="w-full text-center items-center rounded-md bg-purple-400/10 px-2 py-1 text-xs sm:text-sm md:text-md md:text-lg font-medium text-purple-400 ring-1 ring-inset ring-purple/30">
                   AI Tutor PDF Reader
                 </span>
 
