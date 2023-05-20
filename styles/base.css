@@ -17,3 +17,7 @@
 .bg-gray-800 {
     background-color: #1e1724;
 }
+.ring-1 {
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) rgb(68 52 94 / 50%);
+}
+
