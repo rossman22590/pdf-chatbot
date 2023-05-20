@@ -320,7 +320,7 @@ export default function Settings() {
             {namespaceName && (
               <div className="mt-4 sm:mt-8 flex justify-end">
                 <button
-                  className="rounded-md bg-pink-400 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 text-center text-sm sm:text-base font-semibold text-white shadow-sm hover:bg-pink-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-400"
+                  className="rounded-md bg-purple-400 px-2.5 sm:px-3.5 py-1.5 sm:py-2.5 text-center text-sm sm:text-base font-semibold text-white shadow-sm hover:bg-purple-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-400"
                   onClick={handleIngest}
                 >
                   {loading ? 'Ingesting...' : message ? message : 'Ingest'}
