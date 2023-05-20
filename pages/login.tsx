@@ -28,7 +28,7 @@ export default function Example() {
           <img
             src="/images/logo.png"
             alt="logo"
-            style={{ width: '30%', height: '30%' }}
+            style={{ width: '10%', height: '10%' }}
           />
         </div>
         <div className="py-24 sm:py-16">
