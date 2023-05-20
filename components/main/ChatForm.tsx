@@ -45,7 +45,7 @@ const ChatForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="items-center justify-center flex p-4 sm:px-4 sm:py-10 flex-grow bg-gradient-to-t from-indigo-950 via-indigo-950/70 to-indigo-800/30"
+       className="items-center justify-center flex p-4 sm:px-4 sm:py-10 flex-grow bg-gradient-to-t from-gray-900 via-gray-900/70 to-gray-800/30"
     >
       <label htmlFor="userInput" className="sr-only">
         Your message
