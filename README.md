@@ -1,4 +1,4 @@
-# doc-chatbot: GPT-4 x Pinecone x LangChain x MongoDB
+# doc-chatbot: GPT-4 x Pinecone x LangChain x MongoDB 
 
 **NOTE – the right-hand side contains a link to the deployed version of this app, but you won't be able to log in with Google if you try. I am using my own API keys there and therefore restrict the access only to myself. Follow the intructions below to run or deploy your own version.**
 
