@@ -46,9 +46,10 @@
 }
 /* Settings left */
 
-.border-transparent {
-    border-color: #3f2657;
+.bg-gray-800\/60 {
+    background-color: rgb(65 50 80 / 60%);
 }
+.
 
 .bg-red-500 {
     --tw-bg-opacity: 1;
