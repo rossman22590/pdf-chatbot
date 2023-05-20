@@ -55,3 +55,10 @@
     --tw-bg-opacity: 1;
     background-color: #bd3040;
 }
+
+/* Settings right */
+
+.bg-purple-400 {
+    --tw-bg-opacity: 1;
+    background-color: #7f32c1;
+}
